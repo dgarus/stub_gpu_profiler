@@ -1,39 +1,39 @@
 # stub_gpu profiler
 
-Минимальный out-of-tree profiler для PyTorch `PrivateUse1`. Он создаёт три synthetic-события и экспортирует их штатным путём Kineto/`ActivityLogger` в Chrome/Perfetto trace.
+A minimal out-of-tree profiler for PyTorch `PrivateUse1`. It creates three synthetic events and exports them to a Chrome/Perfetto trace through the standard Kineto/`ActivityLogger` path.
 
-Для запуска не нужны NVIDIA GPU, CUDA Toolkit или доступ к CUPTI: все события fake. Если установленный PyTorch пытается инициализировать CUPTI, предупреждения об отсутствии CUDA можно игнорировать.
+No NVIDIA GPU, CUDA Toolkit, or CUPTI access is required: all events are fake. If the installed PyTorch attempts to initialize CUPTI, warnings about CUDA being unavailable can be safely ignored.
 
-## Что устанавливается
+## Installed dependencies
 
-Docker-образ основан на `python:3.11-slim` и устанавливает:
+The Docker image is based on `python:3.11-slim` and installs:
 
-- `build-essential`, `cmake` — C/C++ toolchain;
-- `ninja-build`, `ninja` — сборщик C++ extension;
+- `build-essential` and `cmake` — the C/C++ toolchain;
+- `ninja-build` and `ninja` — the C++ extension build system;
 - `git`;
-- `torch` — PyTorch вместе с используемыми Kineto headers и libraries;
-- `setuptools<82`, `wheel`, `numpy`.
+- `torch` — PyTorch, including the required Kineto headers and libraries;
+- `setuptools<82`, `wheel`, and `numpy`.
 
-Отдельная системная библиотека `fmt` не устанавливается. Extension собирается с `-DFMT_HEADER_ONLY`, используя headers, поставляемые вместе с PyTorch. Заголовок `kineto/libkineto.h` предоставляет полное определение `CpuTraceBuffer` для текущего PyTorch wheel.
+No separate system `fmt` library is installed. The extension is compiled with `-DFMT_HEADER_ONLY` and uses the headers bundled with PyTorch. The `kineto/libkineto.h` header provides the complete `CpuTraceBuffer` definition required by the current PyTorch wheel.
 
-После запуска контейнера сам проект устанавливается командой:
+After starting the container, install and build the project with:
 
 ```bash
 python -m pip install -e . --no-build-isolation
 ```
 
-Это собирает Linux extension `torch_stub_gpu._C` и устанавливает пакет в editable-режиме. `--no-build-isolation` позволяет сборке использовать уже установленный в образе PyTorch и его headers.
+This builds the Linux `torch_stub_gpu._C` extension and installs the package in editable mode. The `--no-build-isolation` option allows the build to use the PyTorch installation and headers already available in the image.
 
-## Сборка образа
+## Build the image
 
-Выполняйте команды из каталога проекта `stub_gpu`:
+Run these commands from the `stub_gpu` project directory:
 
 ```bash
 cd stub_gpu
 docker build -t stub-gpu-profiler .
 ```
 
-## Запуск контейнера
+## Start the container
 
 Linux/macOS:
 
@@ -45,41 +45,41 @@ docker run -it \
   stub-gpu-profiler
 ```
 
-Проект подключается bind mount-ом, поэтому собранный extension и `stub_gpu_trace.json` будут доступны и на host-машине.
+The project is attached through a bind mount, so the compiled extension and `stub_gpu_trace.json` are also available on the host machine.
 
-## Сборка extension
+## Build the extension
 
-Внутри контейнера:
+Inside the container:
 
 ```bash
 python -m pip install -e . --no-build-isolation
 ```
 
-При успешной сборке вывод заканчивается примерно так:
+A successful build ends with output similar to:
 
 ```text
 Successfully built torch_stub_gpu
 Successfully installed torch_stub_gpu-0.0.0
 ```
 
-Для повторной сборки после изменения C++-кода выполните ту же команду.
+Run the same command to rebuild the extension after changing the C++ code.
 
 ## Smoke test
 
-Внутри контейнера:
+Inside the container:
 
 ```bash
 python smoke_test.py
 ```
 
-Скрипт самостоятельно:
+The script automatically:
 
-1. запускает CPU + `PrivateUse1` profiler;
-2. экспортирует `stub_gpu_trace.json`;
-3. парсит файл стандартным JSON parser;
-4. проверяет, что `traceEvents` является массивом и содержит все три synthetic-события.
+1. runs the CPU + `PrivateUse1` profiler;
+2. exports `stub_gpu_trace.json`;
+3. parses the file with the standard JSON parser;
+4. verifies that `traceEvents` is an array containing all three synthetic events.
 
-Ожидаемый вывод:
+Expected output:
 
 ```text
 [stub_gpu] profiler start
@@ -91,13 +91,13 @@ missing: []
 trace validation passed
 ```
 
-Если JSON повреждён, поле `traceEvents` имеет неверный тип или хотя бы одно событие отсутствует, скрипт завершается с ненулевым кодом. Поэтому одной команды `python smoke_test.py` достаточно и для запуска profiler, и для проверки результата.
+If the JSON is malformed, `traceEvents` has the wrong type, or at least one event is missing, the script exits with a non-zero status. Therefore, `python smoke_test.py` is sufficient both to run the profiler and validate its output.
 
-Предупреждения `CUPTI initialization failed` или `gpuGetDeviceCount failed` допустимы: fake `PrivateUse1` profiler от CUDA не зависит. Созданный `stub_gpu_trace.json` можно открыть в Perfetto UI или Chrome Trace Viewer.
+Warnings such as `CUPTI initialization failed` or `gpuGetDeviceCount failed` are expected and can be ignored: the fake `PrivateUse1` profiler does not depend on CUDA. The generated `stub_gpu_trace.json` can be opened in the Perfetto UI or Chrome Trace Viewer.
 
-## Полный сценарий
+## Complete workflow
 
-На host-машине:
+On the host machine:
 
 ```bash
 cd stub_gpu
@@ -109,7 +109,7 @@ docker run --rm -it \
   stub-gpu-profiler
 ```
 
-Затем внутри контейнера:
+Then, inside the container:
 
 ```bash
 python -m pip install -e . --no-build-isolation
