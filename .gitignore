@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.dylib
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Profiler output
+*.json
+*.trace
+
+# Local configuration
+.env
+.DS_Store
+.vscode/
