@@ -2,7 +2,7 @@
 
 A minimal out-of-tree profiler for PyTorch `PrivateUse1`. It creates three synthetic events and exports them to a Chrome/Perfetto trace through the standard Kineto/`ActivityLogger` path.
 
-No NVIDIA GPU, CUDA Toolkit, or CUPTI access is required: all events are fake. If the installed PyTorch attempts to initialize CUPTI, warnings about CUDA being unavailable can be safely ignored.
+No NVIDIA GPU, CUDA Toolkit, or CUPTI access is required: all events are fake. The Docker image installs the CPU-only PyTorch wheel, so Kineto does not attempt to initialize CUDA or CUPTI.
 
 ## Installed dependencies
 
@@ -11,8 +11,16 @@ The Docker image is based on `python:3.11-slim` and installs:
 - `build-essential` and `cmake` — the C/C++ toolchain;
 - `ninja-build` and `ninja` — the C++ extension build system;
 - `git`;
-- `torch` — PyTorch, including the required Kineto headers and libraries;
+- `torch` — the CPU-only PyTorch wheel, including the required Kineto headers and libraries;
 - `setuptools<82`, `wheel`, and `numpy`.
+
+PyTorch `2.12.1+cpu` is installed from the official CPU wheel index:
+
+```text
+https://download.pytorch.org/whl/cpu
+```
+
+Pinning the version keeps the private Kineto API used by this example reproducible. The image build verifies that `torch.version.cuda is None` and fails immediately if a CUDA-enabled wheel is installed.
 
 No separate system `fmt` library is installed. The extension is compiled with `-DFMT_HEADER_ONLY` and uses the headers bundled with PyTorch. The `kineto/libkineto.h` header provides the complete `CpuTraceBuffer` definition required by the current PyTorch wheel.
 
@@ -93,7 +101,7 @@ trace validation passed
 
 If the JSON is malformed, `traceEvents` has the wrong type, or at least one event is missing, the script exits with a non-zero status. Therefore, `python smoke_test.py` is sufficient both to run the profiler and validate its output.
 
-Warnings such as `CUPTI initialization failed` or `gpuGetDeviceCount failed` are expected and can be ignored: the fake `PrivateUse1` profiler does not depend on CUDA. The generated `stub_gpu_trace.json` can be opened in the Perfetto UI or Chrome Trace Viewer.
+The CPU-only PyTorch build does not initialize CUDA or CUPTI, so CUDA/CUPTI warnings are not expected. The generated `stub_gpu_trace.json` can be opened in the Perfetto UI or Chrome Trace Viewer.
 
 ## Complete workflow
 
