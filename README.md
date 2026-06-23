@@ -34,10 +34,10 @@ This builds the Linux `torch_stub_gpu._C` extension and installs the package in 
 
 ## Build the image
 
-Run these commands from the `stub_gpu_profiler` project directory:
+Run these commands from the `stub_gpu` project directory:
 
 ```bash
-cd stub_gpu_profiler
+cd stub_gpu
 docker build -t stub-gpu-profiler .
 ```
 
